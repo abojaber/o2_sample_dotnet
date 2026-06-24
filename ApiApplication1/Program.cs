@@ -1,6 +1,12 @@
+using Serilog;
 using SharedLib;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((context, configuration) =>
+{
+    configuration.ReadFrom.Configuration(context.Configuration);
+});
 
 // Add services to the container.
 
@@ -10,7 +16,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 //AddOpenTelemetryToELKStack
-builder.AddOpenTelemetryToELKStack("Api1", builder.Configuration["elk-apm-server"]);
+builder.AddOpenTelemetryToELKStack("Api1",
+    builder.Configuration["OpenObserve:OtlpEndpoint"]!,
+    login: builder.Configuration["OpenObserve:Login"],
+    key: builder.Configuration["OpenObserve:Key"],
+    organization: builder.Configuration["OpenObserve:Organization"] ?? "default");
 
 var app = builder.Build();
 

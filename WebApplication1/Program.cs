@@ -11,7 +11,11 @@ builder.Host.UseSerilog((context, configuration) =>
 builder.Services.AddRazorPages();
 
 //AddOpenTelemetryToELKStack
-builder.AddOpenTelemetryToELKStack("WebApplication", builder.Configuration["elk-apm-server"]);
+builder.AddOpenTelemetryToELKStack("WebApplication",
+    builder.Configuration["OpenObserve:OtlpEndpoint"]!,
+    login: builder.Configuration["OpenObserve:Login"],
+    key: builder.Configuration["OpenObserve:Key"],
+    organization: builder.Configuration["OpenObserve:Organization"] ?? "default");
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -26,6 +30,21 @@ if (!app.Environment.IsDevelopment())
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.Use(async (context, next) =>
+{
+    await next();
+
+    if (context.Response.StatusCode >= 400)
+    {
+        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+        logger.LogWarning(
+            "HTTP {StatusCode} {Method} {Path}",
+            context.Response.StatusCode,
+            context.Request.Method,
+            context.Request.Path);
+    }
+});
 
 app.UseAuthorization();
 

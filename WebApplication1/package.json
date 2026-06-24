@@ -1,0 +1,16 @@
+{
+  "name": "webapplication1",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build:rum": "esbuild rum-entry.js --bundle --outfile=wwwroot/js/openobserve-rum.js --format=iife --global-name=__openobserveBundle__",
+    "build": "npm run build:rum"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  },
+  "dependencies": {
+    "@openobserve/browser-rum": "latest",
+    "@openobserve/browser-logs": "latest"
+  }
+}

@@ -8,58 +8,47 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Microsoft.Extensions.Options;
 using OpenTelemetry;
+using System.Text;
 
 namespace SharedLib
 {
     public static class OpenTelemetryToELKStack
     {
-        public static void AddOpenTelemetryToELKStack(this WebApplicationBuilder builder, string servicename, string endpointurl)
+        public static void AddOpenTelemetryToELKStack(this WebApplicationBuilder builder, string servicename, string otlpBaseUrl, string? login = null, string? key = null, string organization = "default")
         {
+            var authHeader = !string.IsNullOrEmpty(login) && !string.IsNullOrEmpty(key)
+                ? $"Authorization=Basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"{login}:{key}"))}"
+                : null;
 
-            //OTLP Test
-            //https://bartwullems.blogspot.com/2021/12/elastic-apmuse-net-opentelemetry.html
-
-            //https://dev.to/jmourtada/how-to-setup-opentelemetry-instrumentation-in-aspnet-core-23p5
-            //dotnet add package --prerelease OpenTelemetry.Exporter.Console
-            //dotnet add package --prerelease OpenTelemetry.Exporter.OpenTelemetryProtocol
-            //dotnet add package --prerelease OpenTelemetry.Exporter.OpenTelemetryProtocol.Logs
-            //dotnet add package --prerelease OpenTelemetry.Extensions.Hosting
-            //dotnet add package --prerelease OpenTelemetry.Instrumentation.AspNetCore
-            //dotnet add package --prerelease OpenTelemetry.Instrumentation.Http
-            //dotnet add package --prerelease OpenTelemetry.Instrumentation.Runtime
-
-            //string servicename = "my-service-name";
-            //string endpointurl = "http://localhost:8200";
-
-
+            var tracesEndpoint = $"{otlpBaseUrl}/api/{organization}/v1/traces";
+            var metricsEndpoint = $"{otlpBaseUrl}/api/{organization}/v1/metrics";
 
             builder.Services.AddOpenTelemetry()
                 .ConfigureResource(builder => builder.AddService(serviceName: servicename))
                 .WithTracing(builder => builder
                     .AddHttpClientInstrumentation()
                     .AddAspNetCoreInstrumentation()
-                    .AddConsoleExporter()
                     .AddOtlpExporter(configure =>
                     {
-                        configure.Endpoint = new Uri("http://otel-collector:4318/v1/traces"); // OTel HTTP port + tracing endpoint
-                        configure.Protocol = OtlpExportProtocol.HttpProtobuf; // Default is gRPC - switching to HTTP
-                        configure.ExportProcessorType = ExportProcessorType.Simple;
+                        configure.Endpoint = new Uri(tracesEndpoint);
+                        configure.Protocol = OtlpExportProtocol.HttpProtobuf;
+                        if (authHeader != null)
+                            configure.Headers = authHeader;
                     })
                 )
                 .WithMetrics(builder => builder
-                    // Configure the resource attribute `service.name` to MyServiceName
                     .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(servicename))
-                    // Add metrics from the AspNetCore instrumentation library
                     .AddRuntimeInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddAspNetCoreInstrumentation()
-                    .AddConsoleExporter()
                     .AddOtlpExporter(configure =>
                     {
                         configure.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
-                        configure.Endpoint = new Uri("http://otel-collector:4318/v1/metrics");
+                        configure.Endpoint = new Uri(metricsEndpoint);
+                        if (authHeader != null)
+                            configure.Headers = authHeader;
                     })
-                );           
+                );
         }
    }
 }

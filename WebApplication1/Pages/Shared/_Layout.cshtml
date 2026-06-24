@@ -1,4 +1,21 @@
-﻿<!DOCTYPE html>
+﻿@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    var rumEnabled = Configuration.GetValue<bool>("OpenObserve:Rum:Enabled");
+    var rumAppId = Configuration["OpenObserve:Rum:ApplicationId"];
+    var rumClientToken = Configuration["OpenObserve:Rum:ClientToken"];
+    var rumSite = Configuration["OpenObserve:Rum:Site"];
+    var rumOrgIdentifier = Configuration["OpenObserve:Organization"];
+    var rumService = Configuration["OpenObserve:Rum:Service"];
+    var rumVersion = Configuration["OpenObserve:Rum:Version"];
+    var rumSampleRate = Configuration.GetValue<int>("OpenObserve:Rum:SessionSampleRate");
+    var rumReplaySampleRate = Configuration.GetValue<int>("OpenObserve:Rum:SessionReplaySampleRate");
+    var rumTrackResources = Configuration.GetValue<bool>("OpenObserve:Rum:TrackResources");
+    var rumTrackLongTasks = Configuration.GetValue<bool>("OpenObserve:Rum:TrackLongTasks");
+    var rumTrackUserInteractions = Configuration.GetValue<bool>("OpenObserve:Rum:TrackUserInteractions");
+    var rumInsecureHttp = Configuration.GetValue<bool>("OpenObserve:Rum:InsecureHTTP");
+    var rumEnv = System.Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -7,6 +24,10 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/WebApplication1.styles.css" asp-append-version="true" />
+    @if (rumEnabled)
+    {
+        <script src="~/js/openobserve-rum.js" asp-append-version="true"></script>
+    }
 </head>
 <body>
     <header>
@@ -58,6 +79,79 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @if (rumEnabled)
+    {
+        <script>
+            openobserveRum.init({
+                applicationId: '@rumAppId',
+                clientToken: '@rumClientToken',
+                site: '@rumSite',
+                organizationIdentifier: '@rumOrgIdentifier',
+                service: '@rumService',
+                env: '@rumEnv',
+                version: '@rumVersion',
+                sessionSampleRate: @rumSampleRate,
+                sessionReplaySampleRate: @rumReplaySampleRate,
+                trackResources: @rumTrackResources.ToString().ToLower(),
+                trackLongTasks: @rumTrackLongTasks.ToString().ToLower(),
+                trackUserInteractions: @rumTrackUserInteractions.ToString().ToLower(),
+                apiVersion: 'v1',
+                insecureHTTP: @rumInsecureHttp.ToString().ToLower(),
+                defaultPrivacyLevel: 'allow'
+            });
+
+            openobserveLogs.init({
+                clientToken: '@rumClientToken',
+                site: '@rumSite',
+                organizationIdentifier: '@rumOrgIdentifier',
+                service: '@rumService',
+                env: '@rumEnv',
+                version: '@rumVersion',
+                forwardErrorsToLogs: true,
+                insecureHTTP: @rumInsecureHttp.ToString().ToLower(),
+                apiVersion: 'v1'
+            });
+
+            openobserveRum.setUser({
+                id: '1',
+                name: 'Captain Hook',
+                email: 'captainhook@example.com'
+            });
+
+            openobserveRum.startSessionReplayRecording();
+
+            // Log page view to OpenObserve logs
+            openobserveLogs.logger.info('Page viewed', {
+                page: {
+                    path: window.location.pathname,
+                    title: document.title,
+                    referrer: document.referrer || 'direct',
+                    url: window.location.href
+                }
+            });
+
+            // Track page view as a RUM action
+            openobserveRum.addAction('page-view', {
+                page: window.location.pathname,
+                title: document.title
+            });
+
+            // Log resource loading errors (404s on images, scripts, etc.)
+            window.addEventListener('error', function (event) {
+                if (event.target !== window) {
+                    var target = event.target;
+                    var url = target.src || target.href || '';
+                    openobserveLogs.logger.error('Resource load failed', {
+                        resource: {
+                            type: target.tagName ? target.tagName.toLowerCase() : 'unknown',
+                            url: url
+                        }
+                    });
+                }
+            }, true);
+        </script>
+    }
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>
