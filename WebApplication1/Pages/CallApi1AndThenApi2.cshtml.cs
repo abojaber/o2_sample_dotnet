@@ -5,19 +5,19 @@ namespace WebApplication1.Pages
 {
     public class CallApi1AndThenApi2 : PageModel
     {
-        //public IConfiguration _config { get; set; }
+        private readonly IHttpClientFactory _httpClientFactory;
         public string APIUrl { get; set; }
-        public CallApi1AndThenApi2(IConfiguration config)
+        public CallApi1AndThenApi2(IConfiguration config, IHttpClientFactory httpClientFactory)
         {
-            //_config = config;
-            APIUrl = config["Api1URL"];
+            _httpClientFactory = httpClientFactory;
+            APIUrl = config["Api1Url"];
         }
         public async Task OnGet()
         {
+            var httpClient = _httpClientFactory.CreateClient();
             for (int i = 0; i < 10; i++)
             {
-                var httpClient = new HttpClient();
-                var httpResponseMessage = await httpClient.GetAsync($"{APIUrl}/WeatherForecastIn2");
+                await httpClient.GetAsync($"{APIUrl}/WeatherForecastIn2");
             }
         }
     }

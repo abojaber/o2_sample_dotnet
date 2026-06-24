@@ -9,6 +9,7 @@ builder.Host.UseSerilog((context, configuration) =>
 });
 // Add services to the container.
 builder.Services.AddRazorPages();
+builder.Services.AddHttpClient();
 
 //AddOpenTelemetryToELKStack
 builder.AddOpenTelemetryToELKStack("WebApplication",

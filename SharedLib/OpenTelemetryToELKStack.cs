@@ -8,6 +8,7 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Microsoft.Extensions.Options;
 using OpenTelemetry;
+using OpenTelemetry.Context.Propagation;
 using System.Text;
 
 namespace SharedLib
@@ -23,9 +24,18 @@ namespace SharedLib
             var tracesEndpoint = $"{otlpBaseUrl}/api/{organization}/v1/traces";
             var metricsEndpoint = $"{otlpBaseUrl}/api/{organization}/v1/metrics";
 
+            var resourceBuilder = ResourceBuilder.CreateDefault().AddService(serviceName: servicename);
+
+            Sdk.SetDefaultTextMapPropagator(new CompositeTextMapPropagator(new TextMapPropagator[]
+            {
+                new TraceContextPropagator(),
+                new BaggagePropagator()
+            }));
+
             builder.Services.AddOpenTelemetry()
                 .ConfigureResource(builder => builder.AddService(serviceName: servicename))
                 .WithTracing(builder => builder
+                    .SetResourceBuilder(resourceBuilder)
                     .AddHttpClientInstrumentation()
                     .AddAspNetCoreInstrumentation()
                     .AddOtlpExporter(configure =>
@@ -37,7 +47,7 @@ namespace SharedLib
                     })
                 )
                 .WithMetrics(builder => builder
-                    .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(servicename))
+                    .SetResourceBuilder(resourceBuilder)
                     .AddRuntimeInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddAspNetCoreInstrumentation()

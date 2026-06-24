@@ -12,19 +12,20 @@ namespace ApiApplication1.Controllers
         };
 
         private readonly ILogger<WeatherForecastIn2Controller> _logger;
+        private readonly IHttpClientFactory _httpClientFactory;
         public string APIUrl { get; set; }
-        public WeatherForecastIn2Controller(ILogger<WeatherForecastIn2Controller> logger, IConfiguration config)
+        public WeatherForecastIn2Controller(ILogger<WeatherForecastIn2Controller> logger, IConfiguration config, IHttpClientFactory httpClientFactory)
         {
             _logger = logger;
-            //_config = config;
-            APIUrl = config["Api2URL"];
+            _httpClientFactory = httpClientFactory;
+            APIUrl = config["Api2Url"];
         }
 
         [HttpGet(Name = "GetWeatherForecastIn2")]
         public async Task<IEnumerable<WeatherForecast>> Get()
         {
-            var httpClient = new HttpClient();
-            var httpResponseMessage = await httpClient.GetAsync($"{APIUrl}/WeatherForecast");
+            var httpClient = _httpClientFactory.CreateClient();
+            await httpClient.GetAsync($"{APIUrl}/WeatherForecast");
 
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {

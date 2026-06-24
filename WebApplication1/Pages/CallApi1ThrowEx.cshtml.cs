@@ -7,22 +7,19 @@ namespace WebApplication1.Pages
     public class CallApi1ThrowEx : PageModel
     {
         private readonly ILogger<CallApi1ThrowEx> _logger;
-        //public IConfiguration _config { get; set; }
+        private readonly IHttpClientFactory _httpClientFactory;
         public string APIUrl { get; set; }
-        public CallApi1ThrowEx(ILogger<CallApi1ThrowEx> logger, IConfiguration config)
+        public CallApi1ThrowEx(ILogger<CallApi1ThrowEx> logger, IConfiguration config, IHttpClientFactory httpClientFactory)
         {
-            //_config = config;
-            APIUrl = config["Api1URL"];
+            _httpClientFactory = httpClientFactory;
+            APIUrl = config["Api1Url"];
             _logger = logger;
         }
         public async Task OnGet()
         {
             _logger.LogInformation("Get CallApi1ThrowEx ");
-            //for (int i = 0; i < 10; i++)
-            {
-                var httpClient = new HttpClient();
-                var httpResponseMessage = await httpClient.GetAsync($"{APIUrl}/ThrowEx");
-            }
+            var httpClient = _httpClientFactory.CreateClient();
+            await httpClient.GetAsync($"{APIUrl}/ThrowEx");
         }
     }
 }
