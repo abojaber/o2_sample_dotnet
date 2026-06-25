@@ -8,3 +8,66 @@
     <h1 class="display-4">Welcome</h1>
     <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
 </div>
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">Payment Demo</div>
+            <div class="card-body">
+                <div class="d-flex gap-3">
+                    <form method="post" asp-page-handler="CreateBill">
+                        <button type="submit" class="btn btn-primary">Create Bill (2 items)</button>
+                    </form>
+                    <form method="post" asp-page-handler="PayBill">
+                        <button type="submit" class="btn btn-success" disabled="@(!Model.BillCreated || Model.BillPaid)">Pay Bill</button>
+                    </form>
+                </div>
+
+                @if (Model.BillCreated)
+                {
+                    <div class="alert alert-info mt-3">
+                        <strong>Bill:</strong> @Model.BillNumber<br />
+                        <strong>Amount:</strong> $@Model.BillAmount.ToString("F2")
+                        @if (Model.BillPaid)
+                        {
+                            <span class="badge bg-success ms-2">Paid</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning ms-2">Pending</span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Username))
+{
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-6 col-lg-4">
+            <div class="card">
+                <div class="card-header">Submitted Credentials</div>
+                <div class="card-body">
+                    <p><strong>Username:</strong> @Model.Username</p>
+                    <p><strong>Password:</strong> @Model.Password</p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(Model.RumAction))
+{
+    <script>
+        (function() {
+            var payload = @Html.Raw(Model.RumPayload);
+            openobserveLogs.logger.info('Payment Demo: ' + payload.billNumber, {
+                action: '@Model.RumAction',
+                bill: payload
+            });
+            openobserveRum.addAction('@Model.RumAction', payload);
+        })();
+    </script>
+}
