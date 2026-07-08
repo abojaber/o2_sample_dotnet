@@ -38,6 +38,7 @@ namespace SharedLib
                     .SetResourceBuilder(resourceBuilder)
                     .AddHttpClientInstrumentation()
                     .AddAspNetCoreInstrumentation()
+                    .AddSource(TracingInstrumentation.ActivitySource.Name)
                     .AddOtlpExporter(configure =>
                     {
                         configure.Endpoint = new Uri(tracesEndpoint);
