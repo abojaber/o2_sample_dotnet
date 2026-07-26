@@ -1,0 +1,6 @@
+@OpenObserveDemo_HostAddress = http://localhost:5119
+
+GET {{OpenObserveDemo_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
